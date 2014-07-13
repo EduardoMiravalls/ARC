@@ -1,4 +1,4 @@
-ARC: Automatic Reference Counting hash table
+ARC: Automatic Reference Counting Hash Table library.
 
 ===
 
