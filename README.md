@@ -1,3 +1,7 @@
+ARC: Automatic Reference Counting hash table
+
+===
+
 I started to develop this project to try to overcome a problem I had on a class assignment.
 
 We were developing an IRC threaded server, and all it's data was globally shared among all threads. Problem was, that when deleting one of those objects, even it wasn't accessible anymore, other threads might still keep a reference to it (for example, if they're sleeping in a mutex) and they would trigger a SIGSEGV if they try to access it. And as Linus said, "Remember: if another thread can find your data structure, and you don't have a reference count on it, you almost certainly have a bug.".
