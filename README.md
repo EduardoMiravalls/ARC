@@ -38,6 +38,7 @@ Keep in mind that I'm not locking the object itself, only while I'm manipulating
 
 Update:
 Now I use a finer grained locking. Hope I haven't introduced any deadlock case.
+But still, use your own locking when manipulating the object returned by _refinc().
 
 ===
 
