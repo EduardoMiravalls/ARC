@@ -1,4 +1,5 @@
-ARC: Automatic Reference Counting Hash Table library.
+# ARC
+Automatic Reference Counting Hash Table library.
 
 ===
 
@@ -11,12 +12,15 @@ So now in my spare time I've decided to have a second look on the project and tr
 
 Also, I've used this project to experiment a little with doxygen.
 
+===
 
 TODO:
 Add some tests or examples for RCHashTable.
 
+===
 
-Usage:
+# Usage
+
 * Nothing fancy, just include RCHashTable.h or RCHashTable_sync.h, create a Reference Counting Hash Table with the _new() functions, and you can start using them!
 
 * To acquire a reference to an object use the _refinc method. To release it, use refdec.
@@ -34,5 +38,7 @@ Keep in mind that I'm not locking the object itself, only while I'm manipulating
 
 Update:
 Now I use a finer grained locking. Hope I haven't introduced any deadlock case.
+
 ===
+
 If you discover any bugs, have any questions or suggestions, feel free to email me at edu.miravalls@hotmail.es.
