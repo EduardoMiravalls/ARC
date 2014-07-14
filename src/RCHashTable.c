@@ -42,9 +42,9 @@ struct refcounting_hash_table {
 	CHashTable ht;
 };
 
-struct entry {
+struct record {
 	struct refcounter rc;    /**< the reference counting structure */
-	bool marked_for_removal; /**< if set to true, this entry should be ignored in future RCHashTable_refinc() */
+	bool marked_for_removal; /**< if set to true, this record should be ignored in future RCHashTable_refinc() */
 };
 
 
@@ -66,7 +66,7 @@ RCHashTable RCHashTable_new(uint32_t inicap, cmpfunc key_cmp, delfunc key_free)
 	}
 
 	CHashTable_setKeyFree(rcht->ht, key_free);
-	CHashTable_setValueFree(rcht->ht, (void (*)(void *))RC_free);
+	CHashTable_setValueFree(rcht->ht, (delfunc)RC_free);
 
 	return rcht;
 }
@@ -104,22 +104,22 @@ int RCHashTable_insert(RCHashTable rcht,
                        void *value, delfunc f)
 {
 	int retval;
-	struct entry *e;
+	struct record *r;
 
 	assert(rcht != NULL);
 
-	if ((e = malloc(sizeof(*e))) == NULL) {
+	if ((r = malloc(sizeof(*r))) == NULL) {
 		return 1;
 	}
 
-	RC_ini(&e->rc, value, f);
-	e->marked_for_removal = false;
+	RC_ini(&r->rc, value, f);
+	r->marked_for_removal = false;
 
 	/*
 	 * Negative return values mean insertion error occurred
 	 */
-	if ((retval = CHashTable_insert(rcht->ht, key, hash, e)) < 0) {
-		free(e);
+	if ((retval = CHashTable_insert(rcht->ht, key, hash, r)) < 0) {
+		free(r);
 	}
 
 	return retval;
@@ -127,21 +127,21 @@ int RCHashTable_insert(RCHashTable rcht,
 
 void *RCHashTable_remove(RCHashTable rcht, void *key, uint32_t hash)
 {
-	struct entry *e;
+	struct record *r;
 	void *value;
 
 	assert(rcht != NULL);
 
-	if ((e = CHashTable_lookup(rcht->ht, key, hash)) == NULL) {
+	if ((r = CHashTable_lookup(rcht->ht, key, hash)) == NULL) {
 		return NULL;
 	}
 
-	value = RC_getObj(&e->rc);
+	value = RC_getObj(&r->rc);
 	/*
 	 * Setting object's destructor to NULL will prevent object's destruction
 	 * when it's removed from the table.
 	 */
-	RC_setObjFree(&e->rc, NULL);
+	RC_setObjFree(&r->rc, NULL);
 
 	if (CHashTable_remove(rcht->ht, key, hash) != OK) {
 		return NULL;
@@ -153,22 +153,19 @@ void *RCHashTable_remove(RCHashTable rcht, void *key, uint32_t hash)
 int RCHashTable_delete(RCHashTable rcht, void *key, uint32_t hash)
 {
 	int retval = -1;
-	struct entry *e;
+	struct record *r;
 
 	assert(rcht != NULL);
 
-	if ((e = CHashTable_lookup(rcht->ht, key, hash)) != NULL) {
+	if ((r = CHashTable_lookup(rcht->ht, key, hash)) != NULL) {
 
-		if (RC_getCount(&e->rc) == 1) {
-			/*
-			 * value will be freed when RC_free() is called
-			 * in the hash table
-			 */
+		retval = RC_refdec(&r->rc);
+
+		if (retval == 0) {  /* obj was freed */
 			retval = CHashTable_remove(rcht->ht, key, hash);
 
 		} else {
-			retval = RC_refdec(&e->rc);
-			e->marked_for_removal = true;
+			r->marked_for_removal = true;
 		}
 	}
 
@@ -182,14 +179,13 @@ void *RCHashTable_refinc(RCHashTable rcht, void *key, uint32_t hash)
 
 	assert(rcht != NULL);
 
-	struct entry *e;
+	struct record *r;
 
-	if ((e = CHashTable_lookup(rcht->ht, key, hash)) != NULL &&
-	        e->marked_for_removal == false) {
+	if ((r = CHashTable_lookup(rcht->ht, key, hash)) != NULL &&
+	        r->marked_for_removal == false) {
 
-		RC_refinc(&e->rc);
-
-		retval = RC_getObj(&e->rc);
+		RC_refinc(&r->rc);
+		retval = RC_getObj(&r->rc);
 	}
 
 	return retval;
@@ -197,22 +193,17 @@ void *RCHashTable_refinc(RCHashTable rcht, void *key, uint32_t hash)
 
 int RCHashTable_refdec(RCHashTable rcht, void *key, uint32_t hash)
 {
-	RC tmp;
+	struct record *r;
 	int retval = -1;
 
 	assert(rcht != NULL);
 
-	if ((tmp = CHashTable_lookup(rcht->ht, key, hash)) != NULL) {
+	if ((r = CHashTable_lookup(rcht->ht, key, hash)) != NULL) {
 
-		if (RC_getCount(tmp) == 1) {
-			/*
-			 * value will be freed when RC_free() is called
-			 * in the hash table
-			 */
+		retval = RC_refdec(&r->rc);
+
+		if (retval == 0) {  /* obj was freed */
 			retval = CHashTable_remove(rcht->ht, key, hash);
-
-		} else {
-			retval = RC_refdec(tmp);
 		}
 	}
 

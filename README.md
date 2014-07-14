@@ -30,5 +30,9 @@ The synchronized version is implemented using coarse grained locking, so it may 
 
 Keep in mind that I'm not locking the object itself, only while I'm manipulating the hash table and it's reference count, so you'll have to use additional synchronization mechanisms when you're manipulating the pointer _refinc() returned.
 
+===
 
+Update:
+Now I use a finer grained locking. Hope I haven't introduced any deadlock case.
+===
 If you discover any bugs, have any questions or suggestions, feel free to email me at edu.miravalls@hotmail.es.
