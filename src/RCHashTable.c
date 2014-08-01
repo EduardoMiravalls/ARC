@@ -143,7 +143,7 @@ void *RCHashTable_remove(RCHashTable rcht, void *key, uint32_t hash)
 	 */
 	RC_setObjFree(&r->rc, NULL);
 
-	if (CHashTable_remove(rcht->ht, key, hash) != OK) {
+	if (CHashTable_remove(rcht->ht, key, hash) < 0) {
 		return NULL;
 	}
 
