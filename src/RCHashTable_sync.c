@@ -142,6 +142,7 @@ int RCHashTable_insert_sync(RCHashTable_sync rcht,
 	 * Negative return values mean insertion error occurred
 	 */
 	if ((retval = CHashTable_insert(rcht->ht, key, hash, r)) < 0) {
+		RC_setObjFree(&r->rc, NULL);
 		record_free(r);
 	}
 
@@ -153,34 +154,36 @@ int RCHashTable_insert_sync(RCHashTable_sync rcht,
 void *RCHashTable_remove_sync(RCHashTable_sync rcht, void *key, uint32_t hash)
 {
 	struct record_sync *r;
-	void *value;
+	void *value = NULL;
 
 	assert(rcht != NULL);
 
 	pthread_mutex_lock(&(rcht->mutex));
 
-	if ((r = CHashTable_lookup(rcht->ht, key, hash)) == NULL) {
-		return NULL;
+	if ((r = CHashTable_lookup(rcht->ht, key, hash)) != NULL) {
+
+		pthread_mutex_lock(&(r->mutex));
+		pthread_mutex_unlock(&(rcht->mutex));
+
+		value = RC_getObj(&r->rc);
+		/*
+		 * Setting object's destructor to NULL will prevent object's destruction
+		 * when it's removed from the table.
+		 */
+		RC_setObjFree(&r->rc, NULL);
+		pthread_mutex_unlock(&(r->mutex));
+
+		pthread_mutex_lock(&(rcht->mutex));
+
+		if (CHashTable_remove(rcht->ht, key, hash) < 0) {
+			value = NULL;
+		}
+
+		pthread_mutex_unlock(&(rcht->mutex));
+
+	} else {
+		pthread_mutex_unlock(&(rcht->mutex));
 	}
-
-	pthread_mutex_lock(&(r->mutex));
-	pthread_mutex_unlock(&(rcht->mutex));
-
-	value = RC_getObj(&r->rc);
-	/*
-	 * Setting object's destructor to NULL will prevent object's destruction
-	 * when it's removed from the table.
-	 */
-	RC_setObjFree(&r->rc, NULL);
-	pthread_mutex_unlock(&(r->mutex));
-
-	pthread_mutex_lock(&(rcht->mutex));
-
-	if (CHashTable_remove(rcht->ht, key, hash) != OK) {
-		value = NULL;
-	}
-
-	pthread_mutex_unlock(&(rcht->mutex));
 
 	return value;
 }
@@ -203,7 +206,7 @@ int RCHashTable_delete_sync(RCHashTable_sync rcht, void *key, uint32_t hash)
 
 		if (retval == 0) { /* obj was freed */
 			pthread_mutex_unlock(&(r->mutex));
-		
+
 			pthread_mutex_lock(&(rcht->mutex));
 			retval = CHashTable_remove(rcht->ht, key, hash);
 			pthread_mutex_unlock(&(rcht->mutex));
@@ -271,6 +274,9 @@ int RCHashTable_refdec_sync(RCHashTable_sync rcht, void *key, uint32_t hash)
 			retval = CHashTable_remove(rcht->ht, key, hash);
 			pthread_mutex_unlock(&(rcht->mutex));
 		}
+
+	} else {
+		pthread_mutex_unlock(&(rcht->mutex));
 	}
 
 	return retval;
