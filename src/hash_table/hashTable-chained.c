@@ -249,19 +249,18 @@ int CHashTable_insert(CHashTable hTable, void *key, size_t hashCode, void *value
 
 STATUS CHashTable_replace(CHashTable hTable, void *key, size_t hashCode, void *value)
 {
-	STATUS retvalue = ERR;
+	STATUS retvalue;
 
 	assert(hTable != NULL);
 
-	if (replace_private(hTable->table, hTable->kcmpf, key, hashCode, value) == OK) {
+	retvalue = replace_private(hTable->table, hTable->kcmpf, key, hashCode, value);
+
+	if (retvalue == OK) {
 		if (hTable->secondTable != NULL) {
 			rehash(hTable);
 		}
 
-		return OK;
-	}
-
-	if (hTable->secondTable != NULL) {
+	} else if (hTable->secondTable != NULL) {
 		retvalue = replace_private(hTable->secondTable, hTable->kcmpf, key, hashCode, value);
 		rehash(hTable);
 	}
