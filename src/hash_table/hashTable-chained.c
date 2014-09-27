@@ -149,7 +149,7 @@ CHashTable CHashTable_new(size_t capacity, cmpfunc kcmp)
 	new->minimumCapacity = capacity;
 	new->maxLoadFactor = DEFAULT_MAX_LOAD_FACTOR;
 	new->minLoadFactor = DEFAULT_MIN_LOAD_FACTOR;
-	new->rehashCeilThreshold = capacity * DEFAULT_MAX_LOAD_FACTOR;
+	new->rehashCeilThreshold = capacity * DEFAULT_MAX_LOAD_FACTOR / 100;
 	new->rehashFloorThreshold = 0;
 	new->secondTable = NULL;
 	return new;
