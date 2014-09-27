@@ -190,11 +190,11 @@ double CHashTable_getLoadFactor(CHashTable hTable)
 	assert(hTable != NULL);
 
 	if (hTable->secondTable != NULL) {
-		return ((hTable->secondTable->nelems + hTable->table->nelems) * 100.0)
+		return ((hTable->secondTable->nelems + hTable->table->nelems) * 1.0)
 		       / hTable->secondTable->capacity;
 	}
 
-	return (hTable->table->nelems * 100.0) / hTable->secondTable->capacity;
+	return (hTable->table->nelems * 1.0) / hTable->table->capacity;
 }
 
 void CHashTable_setKeyFree(CHashTable hTable, delfunc kfree)

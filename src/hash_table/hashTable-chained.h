@@ -104,11 +104,12 @@ void CHashTable_setMaxLoadFactor(CHashTable hTable, uint percentage);
 void CHashTable_setMinLoadFactor(CHashTable hTable, uint percentage);
 
 /**
- * @brief returns the percentage of buckets which are not empty.
+ * @brief calculates the ratio of buckets which are not empty over the
+ *        total number of buckets.
  *
  * @param hTable hash table.
  *
- * @return percentage.
+ * @return ratio.
  */
 double CHashTable_getLoadFactor(CHashTable hTable);
 
