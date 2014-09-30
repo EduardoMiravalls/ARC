@@ -73,7 +73,7 @@ struct ChainedHashTable {
 #define DEFAULT_MAX_REHASHES 5
 
 #define DEFAULT_MIN_LOAD_FACTOR 10
-#define DEFAULT_MAX_LOAD_FACTOR 75
+#define DEFAULT_MAX_LOAD_FACTOR 800
 
 /*----------------------------------------------------------------------------
  * PRIVATE FUNCTIONS PROTOTIPES
